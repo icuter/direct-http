@@ -3,15 +3,14 @@ package cn.icuter.directhttp.mock;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.Test;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executor;
 
 public class MockHttpServer extends HttpServer implements Closeable {
@@ -30,8 +29,10 @@ public class MockHttpServer extends HttpServer implements Closeable {
                 int contentLen = in.available();
                 exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
                 exchange.sendResponseHeaders(200, contentLen);
-                for (int n = in.read(buffer); n > 0; n = in.read(buffer)) {
-                    exchange.getResponseBody().write(buffer,0 , n);
+                try (OutputStream out = exchange.getResponseBody()) {
+                    for (int n = in.read(buffer); n > 0; n = in.read(buffer)) {
+                        out.write(buffer,0 , n);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -41,12 +42,14 @@ public class MockHttpServer extends HttpServer implements Closeable {
         server.createContext("/mock/chunk", exchange -> {
             try {
                 exchange.sendResponseHeaders(200, 0);
-                exchange.getResponseBody().write(data());
-                System.out.println("finished");
+                try (OutputStream out = exchange.getResponseBody()) {
+                    out.write(data());
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new IOException(e);
             }
+            System.out.println("finished");
         });
     }
 

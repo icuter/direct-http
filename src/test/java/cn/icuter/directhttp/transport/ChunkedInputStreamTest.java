@@ -3,6 +3,7 @@ package cn.icuter.directhttp.transport;
 import cn.icuter.directhttp.mock.MockHttpServer;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.net.www.http.ChunkedOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

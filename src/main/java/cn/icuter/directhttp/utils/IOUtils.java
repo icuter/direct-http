@@ -8,7 +8,7 @@ public abstract class IOUtils {
 
     public static byte[] readLine(InputStream in) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            for (int b = in.read(); b != -1; b = in.read()) {
+            for (int b = in.read(); b > 0; b = in.read()) {
                 if (b != '\r' && b != '\n') {
                     out.write(b);
                 }

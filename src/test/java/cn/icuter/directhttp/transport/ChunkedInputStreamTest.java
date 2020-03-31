@@ -1,5 +1,6 @@
 package cn.icuter.directhttp.transport;
 
+import cn.icuter.directhttp.mock.MockHttpServer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -104,5 +105,10 @@ public class ChunkedInputStreamTest {
                         .getBytes(StandardCharsets.ISO_8859_1));
         dataStream.write(chunkBody);
         dataStream.write(new byte[]{'\r', '\n'});
+    }
+
+    @Test
+    public void testData() throws IOException {
+        System.out.println(new String(MockHttpServer.data(), StandardCharsets.UTF_8));
     }
 }

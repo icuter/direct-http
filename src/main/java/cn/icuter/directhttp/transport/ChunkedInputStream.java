@@ -47,13 +47,21 @@ import java.nio.charset.StandardCharsets;
 public class ChunkedInputStream extends FilterInputStream {
 
     enum ReadingState {
-        SIZE, DATA, TRAILER, DONE
+        /** reading chunk-size that indicates the chunk-data size */
+        SIZE,
+        /** reading chunk-data */
+        DATA,
+        /** found the ending characters of "0\r\n" and read the chunk trailer */
+        TRAILER,
+        /** finished reading */
+        DONE
     }
 
     private ReadingState state = ReadingState.SIZE;
     private int remainingChunkDataSize;
     private int contentLength;
     private volatile boolean closed;
+    private boolean eos; // end of stream
 
     /**
      *  Request must contains "TE: trailers" header to indicate that chunk-trailer is acceptable
@@ -90,7 +98,14 @@ public class ChunkedInputStream extends FilterInputStream {
     @Override
     public int read() throws IOException {
         int read = read(temp, 0, 1);
-        return read < 0 ? -1 : temp[0];
+        // why temp[0] & 0xff ?
+        //   for read() spec, we have to return positive number if data found,
+        //   but UTF-8 encoding character contains negative byte value.
+        //   Such as Chinese Character "帅" saving byte array with [-27, -72, -123],
+        //   so -27 & 0xff will return 229 to satisfy.
+        //   The spec describes "The value byte is returned as an int in the range 0 to 255"
+        //   and OutputStream writing ((byte) 229) equals to OutputStream writing -27
+        return read <= 0 ? -1 : temp[0] & 0xff;
     }
 
     @Override
@@ -98,19 +113,23 @@ public class ChunkedInputStream extends FilterInputStream {
         if (closed) {
             throw new IOException("Stream closed!");
         }
-        prepareChunkDataReading();
-
-        if (state == ReadingState.DONE) {
+        if (eos) {
             return -1;
         }
+        if (!prepareChunkDataReading()) {
+            return -1;
+        }
+
         int read = in.read(b, off, Math.min(len, remainingChunkDataSize));
         if (read > 0) {
             remainingChunkDataSize -= read;
+        } else {
+            eos = true;
         }
         return read;
     }
 
-    private void prepareChunkDataReading() throws IOException {
+    private boolean prepareChunkDataReading() throws IOException {
         if (state == ReadingState.DATA && remainingChunkDataSize == 0) {
             // the chunk body ending line
             readCRLF();
@@ -134,6 +153,9 @@ public class ChunkedInputStream extends FilterInputStream {
 
             state = ReadingState.DONE;
         }
+        // return false if ReadingState is DONE
+        // return true if ReadingState is NOT DONE
+        return state != ReadingState.DONE;
     }
 
     private void readChunkSize() throws IOException {

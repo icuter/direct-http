@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Http spec https://www.w3.org/Protocols/HTTP/1.1/rfc2616.pdf
@@ -106,6 +107,9 @@ public class HttpRequestMessage {
 
     private void buildRequestContentLength(StringBuilder resultBuilder) {
         if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) {
+            if (content.length > 0) {
+                content = new byte[0];
+            }
             return;
         }
         addNewLine(resultBuilder.append("content-length").append(HEADER_KV_SEPARATOR).append(content.length));
@@ -214,6 +218,7 @@ public class HttpRequestMessage {
     }
 
     public void setContent(byte[] content) {
+        Objects.requireNonNull(content);
         this.content = content;
     }
 }

@@ -1,5 +1,6 @@
 package cn.icuter.directhttp.mock;
 
+import cn.icuter.directhttp.utils.IOUtils;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -25,14 +26,11 @@ public class MockHttpServer extends HttpServer implements Closeable {
         server.createContext("/mock/stdout", exchange -> {
             try {
                 InputStream in = exchange.getRequestBody();
-                byte[] buffer = new byte[1024];
                 int contentLen = in.available();
                 exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
                 exchange.sendResponseHeaders(200, contentLen);
                 try (OutputStream out = exchange.getResponseBody()) {
-                    for (int n = in.read(buffer); n > 0; n = in.read(buffer)) {
-                        out.write(buffer,0 , n);
-                    }
+                    IOUtils.readBytesTo(in, out, contentLen);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -41,6 +39,7 @@ public class MockHttpServer extends HttpServer implements Closeable {
         });
         server.createContext("/mock/chunk", exchange -> {
             try {
+                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
                 exchange.sendResponseHeaders(200, 0);
                 try (OutputStream out = exchange.getResponseBody()) {
                     out.write(data());
@@ -49,7 +48,6 @@ public class MockHttpServer extends HttpServer implements Closeable {
                 e.printStackTrace();
                 throw new IOException(e);
             }
-            System.out.println("finished");
         });
     }
 
@@ -57,10 +55,7 @@ public class MockHttpServer extends HttpServer implements Closeable {
         InputStream fileIn = MockHttpServer.class.getResourceAsStream("/test.html");
         try (BufferedInputStream in = new BufferedInputStream(fileIn)) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] buffer = new byte[20480];
-            for (int n = in.read(buffer); n > 0; n = in.read(buffer)) {
-                out.write(buffer, 0, n);
-            }
+            IOUtils.readBytesTo(in, out);
             return out.toByteArray();
         }
     }

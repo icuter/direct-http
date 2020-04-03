@@ -9,7 +9,7 @@ import java.io.InputStream;
 
 public class ContentLengthInputStream extends FilterInputStream {
 
-    private int contentLength;
+    private int remainingContentLength;
     private volatile boolean closed;
 
     private ContentLengthInputStream(InputStream in, int contentLength) {
@@ -25,7 +25,7 @@ public class ContentLengthInputStream extends FilterInputStream {
 
     public static ContentLengthInputStream of(InputStream in, int contentLength) throws IOException {
         ContentLengthInputStream contentLengthIn = new ContentLengthInputStream(in, contentLength);
-        contentLengthIn.contentLength = contentLength;
+        contentLengthIn.remainingContentLength = contentLength;
         return contentLengthIn;
     }
 
@@ -34,13 +34,13 @@ public class ContentLengthInputStream extends FilterInputStream {
         if (closed) {
             throw new IOException("Stream closed!");
         }
-        if (contentLength <= 0) {
+        if (remainingContentLength <= 0) {
             IOUtils.tryCleanupRemaining(in);
             return -1;
         }
         int b = super.read();
-        if (b > 0) {
-            contentLength--;
+        if (b != -1) {
+            remainingContentLength--;
         }
         return b;
     }
@@ -50,13 +50,13 @@ public class ContentLengthInputStream extends FilterInputStream {
         if (closed) {
             throw new IOException("Stream closed!");
         }
-        if (contentLength <= 0) {
+        if (remainingContentLength <= 0) {
             IOUtils.tryCleanupRemaining(in);
             return -1;
         }
         int n = super.read(b, off, len);
         if (n > 0) {
-            contentLength -= n;
+            remainingContentLength -= n;
         }
         return n;
     }

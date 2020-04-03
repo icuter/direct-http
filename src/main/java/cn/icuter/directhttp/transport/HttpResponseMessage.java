@@ -6,9 +6,11 @@ import cn.icuter.directhttp.utils.IOUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpCookie;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,8 +25,9 @@ import java.util.Map;
  */
 public class HttpResponseMessage {
     private String statusLine;
-    private Map<String, Object> headers = new LinkedHashMap<>();
-    private InputStream inputStream;
+    private Map<String, Object> headers = new HashMap<>();
+    private Map<String, Object> cookies = new HashMap<>();
+    private InputStream messageBodyStream;
     private String messageBody;
     private int contentLength;
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
@@ -32,14 +35,20 @@ public class HttpResponseMessage {
     public static HttpResponseMessage loadFromStream(InputStream in) throws IOException {
         HttpResponseMessage responseMessage = new HttpResponseMessage();
         responseMessage.statusLine = new String(IOUtils.readLine(in), StandardCharsets.ISO_8859_1);
-        for (byte[] headerLine = IOUtils.readLine(in); headerLine.length > 0; headerLine = IOUtils.readLine(in)) {
-            String header = new String(headerLine, StandardCharsets.ISO_8859_1);
+        for (byte[] line = IOUtils.readLine(in); line.length > 0; line = IOUtils.readLine(in)) {
+            String header = new String(line, StandardCharsets.ISO_8859_1);
             // TODO inefficiently parse http response header line
-            // TODO to parse Set-Cookie / Set-Cookie2
             int colonIndex = header.indexOf(":");
             if (colonIndex >= 0) {
-                responseMessage.headers.put(header.substring(0, colonIndex).trim().toLowerCase(),
-                                header.substring(colonIndex + 1).trim());
+                String headerName = header.substring(0, colonIndex).trim().toLowerCase();
+                if (headerName.equals("set-cookie") || headerName.equals("set-cookie2")) {
+                    List<HttpCookie> cookieList = HttpCookie.parse(header);
+                    for (HttpCookie cookie : cookieList) {
+                        responseMessage.cookies.put(cookie.getName(), cookie);
+                    }
+                } else {
+                    responseMessage.headers.put(headerName, header.substring(colonIndex + 1).trim());
+                }
             } else {
                 responseMessage.headers.put(header, "");
             }
@@ -53,12 +62,12 @@ public class HttpResponseMessage {
             }
             // bi-association
             chunkedIn.responseMessage = responseMessage;
-            responseMessage.inputStream = chunkedIn;
+            responseMessage.messageBodyStream = chunkedIn;
             return responseMessage;
         }
         responseMessage.contentLength = Integer.parseInt(
                 (String) responseMessage.headers.getOrDefault("content-length", "0"));
-        responseMessage.inputStream = ContentLengthInputStream.of(in);
+        responseMessage.messageBodyStream = ContentLengthInputStream.of(in);
         return responseMessage;
     }
 
@@ -70,10 +79,7 @@ public class HttpResponseMessage {
             return (messageBody = "");
         }
         try (ByteArrayOutputStream out = new ByteArrayOutputStream(contentLength)) {
-            byte[] buffer = new byte[contentLength];
-            for (int n = inputStream.read(buffer); n > 0; n = inputStream.read(buffer)) {
-                out.write(buffer, 0, n);
-            }
+            IOUtils.readBytesTo(messageBodyStream, out, contentLength);
             byte[] bytes = out.toByteArray();
             if (bytes.length != contentLength) {
                 throw new IllegalStateException("The http response header of Content-Length incorrect, content-length="
@@ -89,6 +95,10 @@ public class HttpResponseMessage {
         return contentLength;
     }
 
+    public Map<String, Object> getCookies() {
+        return cookies;
+    }
+
     public String getStatusLine() {
         return statusLine;
     }
@@ -97,7 +107,7 @@ public class HttpResponseMessage {
         return headers;
     }
 
-    public InputStream getInputStream() {
-        return inputStream;
+    public InputStream getMessageBodyStream() {
+        return messageBodyStream;
     }
 }

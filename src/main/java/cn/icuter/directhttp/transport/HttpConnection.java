@@ -27,17 +27,6 @@ public class HttpConnection implements Closeable {
         this.port = port;
     }
 
-    public static HttpConnection newHttp(String host, int port) throws IOException {
-        HttpConnection connection = new HttpConnection(host, port);
-        connection.connect(3_000, 15_000);
-        return connection;
-    }
-    public static HttpConnection newHttp(String host) throws IOException {
-        HttpConnection connection = new HttpConnection(host, 80);
-        connection.connect(3_000, 15_000);
-        return connection;
-    }
-
     public void connect(int connTimeout, int readTimeout) throws IOException {
         clientSocket.connect(new InetSocketAddress(host, port), connTimeout);
         clientSocket.setSoTimeout(readTimeout);

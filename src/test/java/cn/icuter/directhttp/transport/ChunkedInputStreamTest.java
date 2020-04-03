@@ -1,9 +1,8 @@
 package cn.icuter.directhttp.transport;
 
-import cn.icuter.directhttp.mock.MockHttpServer;
+import cn.icuter.directhttp.utils.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.net.www.http.ChunkedOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,10 +25,7 @@ public class ChunkedInputStreamTest {
         in.setHasTrailerResponseHeader();
         in.responseMessage = new HttpResponseMessage();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] bytes = new byte[128];
-        for (int n = in.read(bytes); n != -1; n = in.read(bytes)) {
-            out.write(bytes, 0, n);
-        }
+        IOUtils.readBytesTo(in, out);
         Assert.assertEquals(new String(chunkBody1, StandardCharsets.UTF_8)
                         + new String(chunkBody2, StandardCharsets.UTF_8)
                         + new String(chunkBody3, StandardCharsets.UTF_8)
@@ -48,7 +44,7 @@ public class ChunkedInputStreamTest {
         byte[] data = createDataBytes(null);
         InputStream in = ChunkedInputStream.of(new ByteArrayInputStream(data));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (int b = in.read(); b != -1; b = in.read()) {
+        for (int b = in.read(); b > 0; b = in.read()) {
             out.write(b);
         }
         Assert.assertEquals(new String(chunkBody1, StandardCharsets.UTF_8)
@@ -64,7 +60,7 @@ public class ChunkedInputStreamTest {
         byte[] data = createDataBytes(new byte[]{97, 98, 99});
         InputStream in = ChunkedInputStream.of(new ByteArrayInputStream(data));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (int b = in.read(); b != -1; b = in.read()) {
+        for (int b = in.read(); b > 0; b = in.read()) {
             out.write(b);
         }
         Assert.assertEquals(new String(chunkBody1, StandardCharsets.UTF_8)
@@ -106,10 +102,5 @@ public class ChunkedInputStreamTest {
                         .getBytes(StandardCharsets.ISO_8859_1));
         dataStream.write(chunkBody);
         dataStream.write(new byte[]{'\r', '\n'});
-    }
-
-    @Test
-    public void testData() throws IOException {
-        System.out.println(new String(MockHttpServer.data(), StandardCharsets.UTF_8));
     }
 }

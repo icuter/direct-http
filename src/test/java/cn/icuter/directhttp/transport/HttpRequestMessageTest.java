@@ -1,9 +1,11 @@
 package cn.icuter.directhttp.transport;
 
+import cn.icuter.directhttp.utils.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class HttpRequestMessageTest {
 
@@ -31,7 +33,16 @@ public class HttpRequestMessageTest {
                         "connection: keep-alive\r\n" +
                         "cookie: Test-Cookie-1=Test-Cookie-Value1; Test-Cookie-2=Test-Cookie-Value2\r\n" +
                         "\r\n" +
-                        new String(content, StandardCharsets.UTF_8),
+                        StringUtils.decodeAsUTF8(content),
                 requestPacket.format());
+    }
+    @Test
+    public void test() {
+        int i = ThreadLocalRandom.current().nextInt();
+        System.out.println(i);
+        System.out.println(i & 0x7fffffff);
+        System.out.println(Integer.toString(i & 0x7fffffff, 32));
+        System.out.println(Integer.toUnsignedString(i, 32));
+        System.out.println(Long.toString(System.currentTimeMillis(), 32));
     }
 }

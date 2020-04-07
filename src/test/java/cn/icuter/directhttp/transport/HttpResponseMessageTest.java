@@ -1,6 +1,7 @@
 package cn.icuter.directhttp.transport;
 
 import cn.icuter.directhttp.data.TestData;
+import cn.icuter.directhttp.utils.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -36,7 +37,7 @@ public class HttpResponseMessageTest {
         Assert.assertEquals("Test-Header-Value", String.valueOf(responseMessage.getHeaders().get("test-header")));
         Assert.assertEquals("text/plain; charset=UTF-8", String.valueOf(responseMessage.getHeaders().get("content-type")));
         Assert.assertEquals(content.length, responseMessage.getContentLength());
-        Assert.assertEquals(new String(content, StandardCharsets.UTF_8), responseMessage.getMessageBody());
+        Assert.assertEquals(StringUtils.decodeAsUTF8(content), responseMessage.getMessageBody());
     }
 
     @Test
@@ -61,7 +62,7 @@ public class HttpResponseMessageTest {
         Assert.assertEquals("Test-Header-Value", String.valueOf(responseMessage.getHeaders().get("test-header")));
         Assert.assertEquals("text/plain", String.valueOf(responseMessage.getHeaders().get("content-type")));
         Assert.assertEquals(content.length, responseMessage.getContentLength());
-        Assert.assertEquals(new String(content, StandardCharsets.UTF_8), responseMessage.getMessageBody());
+        Assert.assertEquals(StringUtils.decodeAsUTF8(content), responseMessage.getMessageBody());
     }
 
     @Test
@@ -204,7 +205,7 @@ public class HttpResponseMessageTest {
         System.arraycopy(encodedContent, 0, data, header.length, encodedContent.length);
 
         HttpResponseMessage response = HttpResponseMessage.loadFromStream(new ByteArrayInputStream(data));
-        Assert.assertEquals(new String(content, StandardCharsets.UTF_8), response.getMessageBody());
+        Assert.assertEquals(StringUtils.decodeAsUTF8(content), response.getMessageBody());
     }
 
     private OutputStream getEncodingOutputStream(ByteArrayOutputStream byteOut, String encoding) throws IOException {

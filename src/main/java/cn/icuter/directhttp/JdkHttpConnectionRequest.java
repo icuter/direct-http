@@ -1,6 +1,7 @@
 package cn.icuter.directhttp;
 
 import cn.icuter.directhttp.utils.SSLUtils;
+import cn.icuter.directhttp.utils.StringUtils;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
@@ -11,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -169,7 +171,7 @@ public class JdkHttpConnectionRequest implements AutoCloseable {
             for (int n = in.read(buffer); n != -1; n = in.read(buffer)) {
                 out.write(buffer, 0, n);
             }
-            return new String(out.toByteArray(), charsetInContentType);
+            return StringUtils.decodeAs(out.toByteArray(), Charset.forName(charsetInContentType));
         }
     }
 

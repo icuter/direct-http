@@ -1,6 +1,7 @@
 package cn.icuter.directhttp.transport;
 
 import cn.icuter.directhttp.utils.IOUtils;
+import cn.icuter.directhttp.utils.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,11 +27,8 @@ public class ChunkedInputStreamTest {
         in.responseMessage = new HttpResponseMessage();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         IOUtils.readBytesTo(in, out);
-        Assert.assertEquals(new String(chunkBody1, StandardCharsets.UTF_8)
-                        + new String(chunkBody2, StandardCharsets.UTF_8)
-                        + new String(chunkBody3, StandardCharsets.UTF_8)
-                        + new String(chunkBody4, StandardCharsets.UTF_8),
-                new String(out.toByteArray(), StandardCharsets.UTF_8));
+
+        assertChunkBody(out);
         Assert.assertEquals(0, in.available());
 
         int contentLength = Integer.parseInt(
@@ -47,11 +45,8 @@ public class ChunkedInputStreamTest {
         for (int b = in.read(); b > 0; b = in.read()) {
             out.write(b);
         }
-        Assert.assertEquals(new String(chunkBody1, StandardCharsets.UTF_8)
-                        + new String(chunkBody2, StandardCharsets.UTF_8)
-                        + new String(chunkBody3, StandardCharsets.UTF_8)
-                        + new String(chunkBody4, StandardCharsets.UTF_8),
-                new String(out.toByteArray(), StandardCharsets.UTF_8));
+
+        assertChunkBody(out);
         Assert.assertEquals(0, in.available());
     }
 
@@ -63,12 +58,17 @@ public class ChunkedInputStreamTest {
         for (int b = in.read(); b > 0; b = in.read()) {
             out.write(b);
         }
-        Assert.assertEquals(new String(chunkBody1, StandardCharsets.UTF_8)
-                        + new String(chunkBody2, StandardCharsets.UTF_8)
-                        + new String(chunkBody3, StandardCharsets.UTF_8)
-                        + new String(chunkBody4, StandardCharsets.UTF_8),
-                new String(out.toByteArray(), StandardCharsets.UTF_8));
+
+        assertChunkBody(out);
         Assert.assertEquals(0, in.available());
+    }
+
+    private void assertChunkBody(ByteArrayOutputStream out) {
+        Assert.assertEquals(StringUtils.decodeAsUTF8(chunkBody1)
+                        + StringUtils.decodeAsUTF8(chunkBody2)
+                        + StringUtils.decodeAsUTF8(chunkBody3)
+                        + StringUtils.decodeAsUTF8(chunkBody4),
+                StringUtils.decodeAsUTF8(out.toByteArray()));
     }
 
     private byte[] createDataBytes(byte[] invalidBytes, String... trailers) throws IOException {

@@ -11,8 +11,9 @@ public class IOUtilsTest {
     @Test
     public void testReadLine() throws IOException {
         String s = "abc 1235 我爱吃榴莲\r\n";
-        ByteArrayInputStream in = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream in = new ByteArrayInputStream(StringUtils.encodeAsUTF8(s));
         byte[] line = IOUtils.readLine(in);
-        Assert.assertEquals(new String(line, StandardCharsets.UTF_8), s.substring(0, s.length() - 2));
+
+        Assert.assertEquals(StringUtils.decodeAsUTF8(line), s.substring(0, s.length() - 2));
     }
 }

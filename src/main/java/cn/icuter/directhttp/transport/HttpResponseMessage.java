@@ -2,6 +2,7 @@ package cn.icuter.directhttp.transport;
 
 import cn.icuter.directhttp.utils.HeaderUtils;
 import cn.icuter.directhttp.utils.IOUtils;
+import cn.icuter.directhttp.utils.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,9 +39,9 @@ public class HttpResponseMessage {
 
     public static HttpResponseMessage loadFromStream(InputStream in) throws IOException {
         HttpResponseMessage response = new HttpResponseMessage();
-        response.statusLine = new String(IOUtils.readLine(in), StandardCharsets.ISO_8859_1);
+        response.statusLine = StringUtils.decodeAsISO(IOUtils.readLine(in));
         for (byte[] line = IOUtils.readLine(in); line.length > 0; line = IOUtils.readLine(in)) {
-            String header = new String(line, StandardCharsets.ISO_8859_1);
+            String header = StringUtils.decodeAsISO(line);
             // TODO inefficiently parse http response header line
             int colonIndex = header.indexOf(":");
             if (colonIndex >= 0) {
@@ -119,7 +120,7 @@ public class HttpResponseMessage {
             }*/
             String contentType = (String) headers.getOrDefault("content-type", "text/plain");
             String contentCharset = HeaderUtils.findHeaderParamValue(contentType, "charset", DEFAULT_CHARSET.name());
-            return (messageBody = new String(bytes, contentCharset));
+            return (messageBody = StringUtils.decodeAs(bytes, Charset.forName(contentCharset)));
         }
     }
 

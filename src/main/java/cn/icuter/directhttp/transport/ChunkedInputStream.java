@@ -1,6 +1,7 @@
 package cn.icuter.directhttp.transport;
 
 import cn.icuter.directhttp.utils.IOUtils;
+import cn.icuter.directhttp.utils.StringUtils;
 
 import java.io.BufferedInputStream;
 import java.io.FilterInputStream;
@@ -179,7 +180,7 @@ public class ChunkedInputStream extends FilterInputStream {
             if (responseMessage == null || !hasTrailerResponseHeader) {
                 continue;
             }
-            String header = new String(bytes, StandardCharsets.ISO_8859_1);
+            String header = StringUtils.decodeAsISO(bytes);
             // TODO inefficiently parse http response header line
             int colonIndex = header.indexOf(":");
             if (colonIndex >= 0) {
@@ -205,8 +206,7 @@ public class ChunkedInputStream extends FilterInputStream {
                         new String(chunkSizeBytes, 0, i, StandardCharsets.ISO_8859_1), 16);
             }
         }
-        return Integer.parseInt(
-                new String(chunkSizeBytes, StandardCharsets.ISO_8859_1), 16);
+        return Integer.parseInt(StringUtils.decodeAsISO(chunkSizeBytes), 16);
     }
 
     int getContentLength() {

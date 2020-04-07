@@ -1,6 +1,8 @@
 package cn.icuter.directhttp.transport;
 
+import cn.icuter.directhttp.mime.Multipart;
 import cn.icuter.directhttp.utils.HeaderUtils;
+import cn.icuter.directhttp.utils.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -45,6 +47,9 @@ public class HttpRequestMessage {
     private byte[] content = new byte[0];
     private String version = "HTTP/1.1";
     private String userAgent = "direct-http";
+
+    /** Content-Type for multipart/form-data */
+    private Multipart multipart;
 
     public HttpRequestMessage() {
     }
@@ -147,7 +152,7 @@ public class HttpRequestMessage {
     private void buildRequestContent(StringBuilder builder) {
         String value = (String) headers.getOrDefault("content-type", "");
         String charset = HeaderUtils.findHeaderParamValue(value, "charset", contentCharset.name());
-        builder.append(new String(content, Charset.forName(charset)));
+        builder.append(StringUtils.decodeAs(content, Charset.forName(charset)));
     }
 
     public void setRequestURI(String requestURI) {

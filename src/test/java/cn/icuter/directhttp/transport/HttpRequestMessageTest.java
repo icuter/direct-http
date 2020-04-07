@@ -1,6 +1,5 @@
 package cn.icuter.directhttp.transport;
 
-import cn.icuter.directhttp.transport.HttpRequestMessage;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,6 +28,7 @@ public class HttpRequestMessageTest {
                         "user-agent: direct-http\r\n" +
                         "test-header: Test-Header-Value\r\n" +
                         "content-type: application/json\r\n" +
+                        "connection: keep-alive\r\n" +
                         "cookie: Test-Cookie-1=Test-Cookie-Value1; Test-Cookie-2=Test-Cookie-Value2\r\n" +
                         "\r\n" +
                         new String(content, StandardCharsets.UTF_8),

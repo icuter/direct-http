@@ -1,5 +1,6 @@
 package cn.icuter.directhttp.transport;
 
+import cn.icuter.directhttp.data.TestData;
 import cn.icuter.directhttp.mock.MockHttpServer;
 import cn.icuter.directhttp.utils.IOUtils;
 import org.junit.AfterClass;
@@ -10,10 +11,8 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 
 public class HttpConnectionTest {
     private static MockHttpServer server;
@@ -45,6 +44,7 @@ public class HttpConnectionTest {
     private void testStdout(HttpRequestMessage request, HttpConnection connection, String expect) throws IOException {
         request.writeTo(connection.getOutputStream());
         HttpResponseMessage response = HttpResponseMessage.loadFromStream(connection.getInputStream());
+
         Assert.assertEquals(expect, response.getMessageBody());
     }
 
@@ -53,11 +53,38 @@ public class HttpConnectionTest {
         HttpRequestMessage request = new HttpRequestMessage();
         request.setHost("localhost");
         request.setRequestURI("/mock/chunk");
-        String dataHash = md5Hash(MockHttpServer.data());
+        String dataHash = TestData.md5Hash(TestData.mediumHtmlData());
         try (HttpConnection connection = HttpConnectionFactory.newHttp("localhost", PORT)) {
             testChunked(request, connection, dataHash);
             testChunked(request, connection, dataHash);
             testChunked(request, connection, dataHash);
+        }
+    }
+
+    @Test
+    public void testChunkedCloseResponse() throws IOException {
+        HttpRequestMessage request = new HttpRequestMessage();
+        request.setHost("localhost");
+        request.setRequestURI("/mock/chunk/conn/close");
+        String dataHash = TestData.md5Hash(TestData.mediumHtmlData());
+        try (HttpConnection connection = HttpConnectionFactory.newHttp("localhost", PORT)) {
+            testChunked(request, connection, dataHash);
+
+            Assert.assertTrue(connection.isClosed());
+        }
+    }
+
+    @Test
+    public void testNoContentCloseResponse() throws IOException {
+        HttpRequestMessage request = new HttpRequestMessage();
+        request.setHost("localhost");
+        request.setRequestURI("/mock/conn/close");
+        try (HttpConnection connection = HttpConnectionFactory.newHttp("localhost", PORT)) {
+            request.writeTo(connection.getOutputStream());
+            HttpResponseMessage responseMessage = HttpResponseMessage.loadFromStream(connection.getInputStream());
+
+            Assert.assertEquals("close", responseMessage.getHeaders().get("connection"));
+            Assert.assertTrue(connection.isClosed());
         }
     }
 
@@ -67,16 +94,8 @@ public class HttpConnectionTest {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             InputStream in = response.getMessageBodyStream();
             IOUtils.readBytesTo(in, out);
-            Assert.assertEquals(expectHash, md5Hash(out.toByteArray()));
-        }
-    }
 
-    private String md5Hash(byte[] data) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            return Base64.getEncoder().encodeToString(digest.digest(data));
-        } catch (NoSuchAlgorithmException e) {
-            return "";
+            Assert.assertEquals(expectHash, TestData.md5Hash(out.toByteArray()));
         }
     }
 

@@ -1,13 +1,19 @@
 package cn.icuter.directhttp.transport;
 
+import cn.icuter.directhttp.data.TestData;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class HttpResponseMessageTest {
 
@@ -162,5 +168,51 @@ public class HttpResponseMessageTest {
         HttpCookie view2Cookie = (HttpCookie) cookieMap.get("view2");
         Assert.assertEquals("DAY", view2Cookie.getValue());
         Assert.assertEquals("directhttp.com", view2Cookie.getDomain());
+    }
+
+    @Test
+    public void testGZipContent() throws IOException {
+        testContentEncoding("gzip");
+    }
+
+    @Test
+    public void testDeflateContent() throws IOException {
+        testContentEncoding("deflate");
+    }
+
+    @Test
+    public void testChunkedGZipContent() throws IOException {
+
+    }
+
+    private void testContentEncoding(String encoding) throws IOException {
+        byte[] content = TestData.smallHtmlData();
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        try (OutputStream out = getEncodingOutputStream(byteOut, encoding)) {
+            out.write(content);
+        }
+        byte[] encodedContent = byteOut.toByteArray();
+        byte[] header = ("HTTP/1.1 200 OK\r\n"
+                + "Test-Header: Test-Header-Value\r\n"
+                + "Content-Type: text/plain; charset=UTF-8\r\n"
+                + "Content-Encoding: " + encoding + "\r\n"
+                + "content-length: " + encodedContent.length + "\r\n"
+                + "\r\n")
+                .getBytes(StandardCharsets.ISO_8859_1);
+        byte[] data = new byte[header.length + encodedContent.length];
+        System.arraycopy(header, 0, data, 0, header.length);
+        System.arraycopy(encodedContent, 0, data, header.length, encodedContent.length);
+
+        HttpResponseMessage response = HttpResponseMessage.loadFromStream(new ByteArrayInputStream(data));
+        Assert.assertEquals(new String(content, StandardCharsets.UTF_8), response.getMessageBody());
+    }
+
+    private OutputStream getEncodingOutputStream(ByteArrayOutputStream byteOut, String encoding) throws IOException {
+        if ("gzip".equalsIgnoreCase(encoding)) {
+            return new GZIPOutputStream(byteOut);
+        } else if ("deflate".equalsIgnoreCase(encoding)) {
+            return new DeflaterOutputStream(byteOut);
+        }
+        throw new UnsupportedEncodingException("Invalid encoding: " + encoding);
     }
 }

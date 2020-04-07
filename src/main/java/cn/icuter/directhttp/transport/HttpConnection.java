@@ -20,6 +20,9 @@ public class HttpConnection implements Closeable {
     private final Socket clientSocket;
     private final String host;
     private final int port;
+    private boolean supportKeepAlive;
+    private int connTimeout;
+    private int readTimeout;
 
     HttpConnection(String host, int port) {
         clientSocket = new Socket();
@@ -27,7 +30,7 @@ public class HttpConnection implements Closeable {
         this.port = port;
     }
 
-    public void connect(int connTimeout, int readTimeout) throws IOException {
+    public void connect() throws IOException {
         clientSocket.connect(new InetSocketAddress(host, port), connTimeout);
         clientSocket.setSoTimeout(readTimeout);
         clientSocket.setTcpNoDelay(true);
@@ -41,12 +44,48 @@ public class HttpConnection implements Closeable {
         return clientSocket.getInputStream().read(buffer);
     }
 
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public boolean isSupportKeepAlive() {
+        return supportKeepAlive;
+    }
+
+    public void setSupportKeepAlive(boolean supportKeepAlive) {
+        this.supportKeepAlive = supportKeepAlive;
+    }
+
     public OutputStream getOutputStream() throws IOException {
         return clientSocket.getOutputStream();
     }
 
     public InputStream getInputStream() throws IOException {
         return clientSocket.getInputStream();
+    }
+
+    public int getConnTimeout() {
+        return connTimeout;
+    }
+
+    public void setConnTimeout(int connTimeout) {
+        this.connTimeout = connTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    public boolean isClosed() {
+        return clientSocket.isClosed();
     }
 
     @Override

@@ -1,12 +1,11 @@
 package cn.icuter.directhttp.mock;
 
+import cn.icuter.directhttp.data.TestData;
 import cn.icuter.directhttp.utils.IOUtils;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,38 +26,62 @@ public class MockHttpServer extends HttpServer implements Closeable {
             try {
                 InputStream in = exchange.getRequestBody();
                 int contentLen = in.available();
+
                 exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
+                exchange.getResponseHeaders().add("Connection", "keep-alive");
+
                 exchange.sendResponseHeaders(200, contentLen);
                 try (OutputStream out = exchange.getResponseBody()) {
                     IOUtils.readBytesTo(in, out, contentLen);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new IOException(e);
+                throw e;
             }
         });
         server.createContext("/mock/chunk", exchange -> {
             try {
+
                 exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                exchange.getResponseHeaders().add("Connection", "keep-alive");
+
                 exchange.sendResponseHeaders(200, 0);
                 try (OutputStream out = exchange.getResponseBody()) {
-                    out.write(data());
+                    out.write(TestData.mediumHtmlData());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new IOException(e);
+                throw e;
+            }
+        });
+        server.createContext("/mock/chunk/conn/close", exchange -> {
+            try {
+                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                exchange.getResponseHeaders().add("Connection", "close");
+
+                exchange.sendResponseHeaders(200, 0);
+                try (OutputStream out = exchange.getResponseBody()) {
+                    out.write(TestData.mediumHtmlData());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        });
+        server.createContext("/mock/conn/close", exchange -> {
+            try {
+                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                exchange.getResponseHeaders().add("Connection", "close");
+
+                exchange.sendResponseHeaders(204, -1);
+                exchange.getResponseBody().close();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
             }
         });
     }
 
-    public static byte[] data() throws IOException {
-        InputStream fileIn = MockHttpServer.class.getResourceAsStream("/test.html");
-        try (BufferedInputStream in = new BufferedInputStream(fileIn)) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            IOUtils.readBytesTo(in, out);
-            return out.toByteArray();
-        }
-    }
 
     public static MockHttpServer newLocalHttpServer(int port) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("localhost", port), 0);

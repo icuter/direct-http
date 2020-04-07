@@ -116,11 +116,19 @@ public class HttpRequestMessage {
     }
 
     private void buildRequestHeaders(StringBuilder builder) {
+        boolean hasConnectionHeader = false;
         for (Map.Entry<String, Object> header : headers.entrySet()) {
-            if (!header.getKey().equalsIgnoreCase("cookie")) {
+            String headerName = header.getKey().toLowerCase();
+            if (!headerName.equals("cookie")) {
                 String val = header.getValue() == null ? "" : String.valueOf(header.getValue());
-                addNewLine(builder.append(header.getKey().toLowerCase()).append(HEADER_KV_SEPARATOR).append(val));
+                addNewLine(builder.append(headerName).append(HEADER_KV_SEPARATOR).append(val));
             }
+            if (headerName.equals("connection")) {
+                hasConnectionHeader = true;
+            }
+        }
+        if (!hasConnectionHeader) {
+            addNewLine(builder.append("connection").append(HEADER_KV_SEPARATOR).append("keep-alive"));
         }
     }
 

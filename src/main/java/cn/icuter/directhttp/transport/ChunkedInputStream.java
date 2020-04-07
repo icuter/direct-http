@@ -62,6 +62,7 @@ public class ChunkedInputStream extends FilterInputStream {
     private int contentLength;
     private volatile boolean closed;
     private boolean eos; // end of stream
+    private boolean closeReadAll;
 
     /**
      *  Request must contains "TE: trailers" header to indicate that chunk-trailer is acceptable
@@ -148,10 +149,14 @@ public class ChunkedInputStream extends FilterInputStream {
         if (state == ReadingState.TRAILER) {
             // read all trailer data and put into Http Response Header
             readTrailerToResponseHeader();
-            setContentLength();
+            setResponseContentLength();
             IOUtils.tryCleanupRemaining(in);
 
             state = ReadingState.DONE;
+        }
+        if (state == ReadingState.DONE && closeReadAll) {
+            // When "Connection: close" header responded
+            in.close();
         }
         // return false if ReadingState is DONE
         // return true if ReadingState is NOT DONE
@@ -186,8 +191,9 @@ public class ChunkedInputStream extends FilterInputStream {
         }
     }
 
-    private void setContentLength() {
+    private void setResponseContentLength() {
         if (responseMessage != null) {
+            responseMessage.contentLength = contentLength;
             responseMessage.getHeaders().put("content-length", String.valueOf(contentLength));
         }
     }
@@ -220,6 +226,10 @@ public class ChunkedInputStream extends FilterInputStream {
 
     void setHasTrailerResponseHeader() {
         hasTrailerResponseHeader = true;
+    }
+
+    void setCloseReadAll() {
+        this.closeReadAll = true;
     }
 
     @Override

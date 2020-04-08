@@ -1,5 +1,7 @@
 package cn.icuter.directhttp.mime;
 
+import cn.icuter.directhttp.utils.StringUtils;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +24,7 @@ public class Multipart implements Part {
     public static Multipart FORM_DATA = new Multipart("form-data");
     private static final byte[] BOUNDARY_EXTENSION = new byte[] {'-', '-'};
 
+    private Multipart parent;
     private final String boundary;
     private byte[] boundaryBytes;
     private final String subType;
@@ -45,6 +48,9 @@ public class Multipart implements Part {
 
     public Multipart addPart(Part part) {
         parts.add(part);
+        if (part.isMultipart()) {
+            ((Multipart) part).setParent(this);
+        }
         return this;
     }
 
@@ -60,9 +66,22 @@ public class Multipart implements Part {
         return parts;
     }
 
+    public String toContentType() {
+        return "multipart/" + subType + "; boundary=" + boundary;
+    }
+
+    public void setParent(Multipart parent) {
+        this.parent = parent;
+    }
+
     private String nextBoundary() {
         return Integer.toUnsignedString(ThreadLocalRandom.current().nextInt(), 32)
                 + Long.toString(System.currentTimeMillis(), 32);
+    }
+
+    @Override
+    public String toString() {
+        return toContentType();
     }
 
     @Override
@@ -71,7 +90,17 @@ public class Multipart implements Part {
     }
 
     @Override
+    public Map<String, String> header() {
+        return null;
+    }
+
+    @Override
     public void writeTo(OutputStream out) throws Exception {
+        if (parent != null) {
+            out.write(StringUtils.encodeAsISO("Content-Type: " + toContentType()));
+            out.write(CRLF);
+            out.write(CRLF);
+        }
         for (Part part : parts) {
             writeBodyBoundaryLine(out);
             part.writeTo(out);
@@ -94,10 +123,5 @@ public class Multipart implements Part {
         out.write(boundaryBytes);
         out.write(BOUNDARY_EXTENSION);
         out.write(CRLF);
-    }
-
-    @Override
-    public Map<String, String> header() {
-        return null;
     }
 }

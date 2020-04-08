@@ -10,9 +10,16 @@ public class TextPart extends BodyPart {
     public TextPart(String text) {
         this.text = text;
     }
+
     @Override
     public void writeBodyTo(OutputStream out) throws Exception {
-        // get charset from ContentType parameters (default UTF-8)
+        // TODO get charset from ContentType parameters (default UTF-8)
         out.write(StringUtils.encodeAsUTF8(text));
+    }
+
+    @Override
+    public long bodyLength() {
+        // TODO get charset from ContentType parameters (default UTF-8)
+        return StringUtils.encodeAsUTF8(text).length;
     }
 }

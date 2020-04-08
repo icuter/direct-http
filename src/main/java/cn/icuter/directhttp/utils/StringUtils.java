@@ -29,4 +29,19 @@ public abstract class StringUtils {
         return decodeAs(bytes, StandardCharsets.ISO_8859_1);
     }
 
+    public static boolean isEmpty(String src) {
+        return src == null || src.length() <= 0;
+    }
+
+    public static boolean isNotEmpty(String src) {
+        return !isEmpty(src);
+    }
+
+    public static boolean isBlank(String src) {
+        return src == null || src.trim().length() <= 0;
+    }
+
+    public static boolean isNotBlank(String src) {
+        return !isBlank(src);
+    }
 }

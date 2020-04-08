@@ -21,15 +21,33 @@ public abstract class BodyPart implements Part {
 
     @Override
     public void writeTo(OutputStream out) throws Exception {
-        // write header to output stream
+        writeHeaderTo(out);
+        writeBodyTo(out);
+    }
+
+    @Override
+    public long length() {
+        return headerLength() + bodyLength();
+    }
+
+    protected void writeHeaderTo(OutputStream out) throws Exception {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             String header = entry.getKey() + ": " + entry.getValue();
             out.write(StringUtils.encodeAsISO(header));
             out.write(CRLF);
         }
         out.write(CRLF);
-        writeBodyTo(out);
+    }
+    public abstract void writeBodyTo(OutputStream out) throws Exception;
+
+    protected long headerLength() {
+        long headerLen = 0;
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            String header = entry.getKey() + ": " + entry.getValue();
+            headerLen += StringUtils.encodeAsISO(header).length + 2;
+        }
+        return headerLen + 2;
     }
 
-    public abstract void writeBodyTo(OutputStream out) throws Exception;
+    public abstract long bodyLength();
 }

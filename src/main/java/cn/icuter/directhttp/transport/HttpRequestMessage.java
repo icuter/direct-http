@@ -1,6 +1,7 @@
 package cn.icuter.directhttp.transport;
 
 import cn.icuter.directhttp.mime.Multipart;
+import cn.icuter.directhttp.mime.Part;
 import cn.icuter.directhttp.utils.HeaderUtils;
 import cn.icuter.directhttp.utils.StringUtils;
 
@@ -47,7 +48,6 @@ public class HttpRequestMessage {
     private byte[] content = new byte[0];
     private String version = "HTTP/1.1";
     private String userAgent = "direct-http";
-
     /** Content-Type for multipart/form-data */
     private Multipart multipart;
 
@@ -65,7 +65,7 @@ public class HttpRequestMessage {
         addNewLine(resultBuilder);
 
         // write request line and headers
-        out.write(resultBuilder.toString().getBytes(StandardCharsets.ISO_8859_1));
+        out.write(StringUtils.encodeAsISO(resultBuilder.toString()));
         if (content.length > 0) {
             out.write(content);
         }
@@ -117,7 +117,8 @@ public class HttpRequestMessage {
             }
             return;
         }
-        addNewLine(resultBuilder.append("content-length").append(HEADER_KV_SEPARATOR).append(content.length));
+        long contentLength = multipart != null ? multipart.length() : content.length;
+        addNewLine(resultBuilder.append("content-length").append(HEADER_KV_SEPARATOR).append(contentLength));
     }
 
     private void buildRequestHeaders(StringBuilder builder) {
@@ -176,10 +177,25 @@ public class HttpRequestMessage {
     }
 
     public void addHeader(String key, Object val) {
-        if (key == null || key.isEmpty()) {
+        if (StringUtils.isBlank(key)) {
             throw new IllegalArgumentException("Header name must not be null or empty!");
         }
         headers.put(key, val);
+    }
+
+    public void setMultipart(Multipart multipart) {
+        this.multipart = multipart;
+    }
+
+    public void addBodyPart(Part part) {
+        if (this.multipart == null) {
+            this.multipart = new Multipart("form-data");
+        }
+        this.multipart.addPart(part);
+    }
+
+    public Multipart getMultipart() {
+        return multipart;
     }
 
     @Override

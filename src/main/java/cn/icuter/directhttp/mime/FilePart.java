@@ -21,4 +21,9 @@ public class FilePart extends BodyPart {
             IOUtils.readBytesTo(in, out);
         }
     }
+
+    @Override
+    public long bodyLength() {
+        return file.length();
+    }
 }

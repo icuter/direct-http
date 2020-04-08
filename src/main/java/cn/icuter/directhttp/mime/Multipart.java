@@ -5,23 +5,23 @@ import cn.icuter.directhttp.utils.StringUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Content-Type: Multipart/mixed
- *
- * https://tools.ietf.org/html/rfc2046#section-5.1.1
+ * "multipart/mixed" refer to the spec of <a href="https://tools.ietf.org/html/rfc2046#section-5.1.1">rfc2046#section-5.1.1</a>
+ * <p />
+ * "multipart/form-data" refer to the spec of <a href="https://tools.ietf.org/html/rfc1867">rfc1867</a>
  *
  * @author edward
  * @since 2020-04-06
  */
-public class Multipart implements Part {
+public class Multipart extends BodyPart {
 
-    /** multipart/form-data refer to the spec of <a href="https://tools.ietf.org/html/rfc1867">rfc1867</a> */
-    public static Multipart FORM_DATA = new Multipart("form-data");
     private static final byte[] BOUNDARY_EXTENSION = new byte[] {'-', '-'};
 
     private Multipart parent;
@@ -37,19 +37,24 @@ public class Multipart implements Part {
     public Multipart(String subType) {
         this.boundary = nextBoundary();
         this.subType = subType;
-        this.boundaryBytes = boundary.getBytes(StandardCharsets.ISO_8859_1);
+        this.boundaryBytes = StringUtils.encodeAsISO(boundary);
     }
 
     public Multipart(String boundary, String subType) {
+        if (StringUtils.isBlank(boundary)) {
+            throw new IllegalArgumentException("boundary must NOT be null or empty!");
+        }
         this.boundary = boundary;
         this.subType = subType;
-        this.boundaryBytes = boundary.getBytes(StandardCharsets.ISO_8859_1);
+        this.boundaryBytes = StringUtils.encodeAsISO(this.boundary);
     }
 
     public Multipart addPart(Part part) {
         parts.add(part);
         if (part.isMultipart()) {
-            ((Multipart) part).setParent(this);
+            Multipart multipart = (Multipart) part;
+            multipart.setParent(this);
+            multipart.header().put("Content-Type", multipart.toContentType());
         }
         return this;
     }
@@ -90,17 +95,14 @@ public class Multipart implements Part {
     }
 
     @Override
-    public Map<String, String> header() {
-        return null;
+    public void writeHeaderTo(OutputStream out) throws Exception {
+        if (parent != null) {
+            super.writeHeaderTo(out);
+        }
     }
 
     @Override
-    public void writeTo(OutputStream out) throws Exception {
-        if (parent != null) {
-            out.write(StringUtils.encodeAsISO("Content-Type: " + toContentType()));
-            out.write(CRLF);
-            out.write(CRLF);
-        }
+    public void writeBodyTo(OutputStream out) throws Exception {
         for (Part part : parts) {
             writeBodyBoundaryLine(out);
             part.writeTo(out);
@@ -110,6 +112,30 @@ public class Multipart implements Part {
             }
         }
         writeEndBoundaryLine(out);
+    }
+
+    @Override
+    protected long headerLength() {
+        if (parent != null) {
+            return super.headerLength();
+        }
+        return 0;
+    }
+
+    @Override
+    public long bodyLength() {
+        long length = 0;
+        for (Part part : parts) {
+            length += BOUNDARY_EXTENSION.length + boundaryBytes.length /* body boundary length */
+                    + 2 /* CRLF length */
+                    + part.length();
+            if (!part.isMultipart()) {
+                length += 2;
+            }
+        }
+        return length
+                + BOUNDARY_EXTENSION.length + boundaryBytes.length + BOUNDARY_EXTENSION.length /* ending boundary length */
+                + 2 /* CRLF length */;
     }
 
     private void writeBodyBoundaryLine(OutputStream out) throws IOException {

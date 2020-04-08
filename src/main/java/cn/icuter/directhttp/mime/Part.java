@@ -11,6 +11,7 @@ public interface Part {
     byte[] CRLF = new byte[] {'\r', '\n'};
 
     boolean isMultipart();
+    long length();
     Map<String, String> header();
     void writeTo(OutputStream out) throws Exception;
 }

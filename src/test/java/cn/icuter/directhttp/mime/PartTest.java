@@ -65,14 +65,25 @@ public class PartTest {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         multipart.writeTo(out);
-        String expected =
-          "--" + multipart.getBoundary() + "\r\n"
-        + "\r\n"
-        + SRC + "\r\n"
-        + "--" + multipart.getBoundary() + "\r\n"
-        + "\r\n"
-        + SRC + "\r\n"
-        ;
+
+        String expected = "--" + multipart.getBoundary() + "\r\n"
+                + "\r\n"
+                + SRC + "\r\n"
+                + "--" + multipart.getBoundary() + "\r\n"
+                + "\r\n"
+                + SRC + "\r\n"
+                + "--" + multipart.getBoundary() + "\r\n"
+                + "Content-Type: " + subMulti.toContentType() + "\r\n"
+                + "\r\n"
+                + "--" + subMulti.getBoundary() + "\r\n"
+                + "\r\n"
+                + SRC + "\r\n"
+                + "--" + subMulti.getBoundary() + "\r\n"
+                + "\r\n"
+                + SRC + "\r\n"
+                + "--" + subMulti.getBoundary() + "--\r\n"
+                + "--" + multipart.getBoundary() + "--\r\n";
         Assert.assertEquals("multipart/mixed; boundary=" + multipart.getBoundary(), multipart.toContentType());
+        Assert.assertEquals(expected, StringUtils.decodeAsUTF8(out.toByteArray()));
     }
 }

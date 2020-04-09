@@ -75,7 +75,7 @@ public class Multipart extends BodyPart {
         return "multipart/" + subType + "; boundary=" + boundary;
     }
 
-    public void setParent(Multipart parent) {
+    private void setParent(Multipart parent) {
         this.parent = parent;
     }
 
@@ -127,15 +127,17 @@ public class Multipart extends BodyPart {
         long length = 0;
         for (Part part : parts) {
             length += BOUNDARY_EXTENSION.length + boundaryBytes.length /* body boundary length */
-                    + 2 /* CRLF length */
-                    + part.length();
+                    + CRLF.length
+                    + part.length();                                   /* part body length (contains part headers) */
+
             if (!part.isMultipart()) {
-                length += 2;
+                length += CRLF.length;
             }
         }
         return length
-                + BOUNDARY_EXTENSION.length + boundaryBytes.length + BOUNDARY_EXTENSION.length /* ending boundary length */
-                + 2 /* CRLF length */;
+                + BOUNDARY_EXTENSION.length + boundaryBytes.length /* body boundary length */
+                + BOUNDARY_EXTENSION.length                        /* ending boundary length */
+                + CRLF.length;
     }
 
     private void writeBodyBoundaryLine(OutputStream out) throws IOException {

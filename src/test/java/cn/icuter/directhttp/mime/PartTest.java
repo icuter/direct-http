@@ -55,35 +55,42 @@ public class PartTest {
 
     @Test
     public void testMultipart() throws Exception {
+        Part text = new TextPart(SRC);
+        text.header().put("Content-Type", "text/plain; charset=UTF-8");
         Multipart subMulti = new Multipart()
-                .addPart(new TextPart(SRC))
-                .addPart(new TextPart(SRC));
+                .addPart(text)
+                .addPart(text);
         Multipart multipart = new Multipart()
-                .addPart(new TextPart(SRC))
-                .addPart(new TextPart(SRC))
+                .addPart(text)
+                .addPart(text)
                 .addPart(subMulti);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         multipart.writeTo(out);
 
         String expected = "--" + multipart.getBoundary() + "\r\n"
+                + "Content-Type: text/plain; charset=UTF-8" + "\r\n"
                 + "\r\n"
                 + SRC + "\r\n"
                 + "--" + multipart.getBoundary() + "\r\n"
+                + "Content-Type: text/plain; charset=UTF-8" + "\r\n"
                 + "\r\n"
                 + SRC + "\r\n"
                 + "--" + multipart.getBoundary() + "\r\n"
                 + "Content-Type: " + subMulti.toContentType() + "\r\n"
                 + "\r\n"
                 + "--" + subMulti.getBoundary() + "\r\n"
+                + "Content-Type: text/plain; charset=UTF-8" + "\r\n"
                 + "\r\n"
                 + SRC + "\r\n"
                 + "--" + subMulti.getBoundary() + "\r\n"
+                + "Content-Type: text/plain; charset=UTF-8" + "\r\n"
                 + "\r\n"
                 + SRC + "\r\n"
                 + "--" + subMulti.getBoundary() + "--\r\n"
                 + "--" + multipart.getBoundary() + "--\r\n";
         Assert.assertEquals("multipart/mixed; boundary=" + multipart.getBoundary(), multipart.toContentType());
         Assert.assertEquals(expected, StringUtils.decodeAsUTF8(out.toByteArray()));
+        Assert.assertEquals(StringUtils.encodeAsUTF8(expected).length, multipart.length());
     }
 }

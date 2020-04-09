@@ -44,9 +44,9 @@ public abstract class BodyPart implements Part {
         long headerLen = 0;
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             String header = entry.getKey() + ": " + entry.getValue();
-            headerLen += StringUtils.encodeAsISO(header).length + 2;
+            headerLen += StringUtils.encodeAsISO(header).length + CRLF.length;
         }
-        return headerLen + 2;
+        return headerLen + CRLF.length;
     }
 
     public abstract long bodyLength();

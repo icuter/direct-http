@@ -55,15 +55,16 @@ public class PartTest {
 
     @Test
     public void testMultipart() throws Exception {
-        Part text = new TextPart(SRC);
+        BodyPart text = new TextPart(SRC);
         text.header().put("Content-Type", "text/plain; charset=UTF-8");
-        Multipart subMulti = new Multipart()
-                .addPart(text)
-                .addPart(text);
+        MultiBodyPart subMulti = new MultiBodyPart();
+        subMulti.addBodyPart(text);
+        subMulti.addBodyPart(text);
+
         Multipart multipart = new Multipart()
-                .addPart(text)
-                .addPart(text)
-                .addPart(subMulti);
+                .addBodyPart(text)
+                .addBodyPart(text)
+                .addBodyPart(subMulti);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         multipart.writeTo(out);

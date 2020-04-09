@@ -140,12 +140,9 @@ public class ChunkedInputStream extends FilterInputStream {
         }
         if (state == ReadingState.SIZE) {
             // read chunk size representing the chunk body size
-            readChunkSize();
+            int chunkSize = readChunkSize();
 
-            state = ReadingState.DATA;
-            if (remainingChunkDataSize == 0) {
-                state = ReadingState.TRAILER;
-            }
+            state = chunkSize == 0 ? ReadingState.TRAILER : ReadingState.DATA;
         }
         if (state == ReadingState.TRAILER) {
             // read all trailer data and put into Http Response Header
@@ -164,15 +161,17 @@ public class ChunkedInputStream extends FilterInputStream {
         return state != ReadingState.DONE;
     }
 
-    private void readChunkSize() throws IOException {
+    private int readChunkSize() throws IOException {
         byte[] chunkSizeBytes = IOUtils.readLine(in);
         if (chunkSizeBytes.length <= 0) {
             throw new IllegalStateException("Illegal chunked http response message body !");
         }
-        // read the line of chunk-size, but ignore the chunk-extensions
+        // read the line of chunk-size, but discard the chunk-extensions
         // last-chunk = 1*("0") [ chunk-extension ] CRLF
         remainingChunkDataSize = getChunkDataSize(chunkSizeBytes);
         contentLength += remainingChunkDataSize;
+
+        return remainingChunkDataSize;
     }
 
     private void readTrailerToResponseHeader() throws IOException {

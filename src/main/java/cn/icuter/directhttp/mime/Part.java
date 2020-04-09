@@ -9,6 +9,7 @@ import java.util.Map;
  */
 public interface Part {
     byte[] CRLF = new byte[] {'\r', '\n'};
+    byte[] BOUNDARY_EXTENSION = new byte[] {'-', '-'};
 
     boolean isMultipart();
     long length();

@@ -1,5 +1,6 @@
 package cn.icuter.directhttp.transport;
 
+import cn.icuter.directhttp.mime.BodyPart;
 import cn.icuter.directhttp.mime.Multipart;
 import cn.icuter.directhttp.mime.Part;
 import cn.icuter.directhttp.utils.HeaderUtils;
@@ -187,11 +188,11 @@ public class HttpRequestMessage {
         this.multipart = multipart;
     }
 
-    public void addBodyPart(Part part) {
+    public void addBodyPart(BodyPart part) {
         if (this.multipart == null) {
             this.multipart = new Multipart("form-data");
         }
-        this.multipart.addPart(part);
+        this.multipart.addBodyPart(part);
     }
 
     public Multipart getMultipart() {

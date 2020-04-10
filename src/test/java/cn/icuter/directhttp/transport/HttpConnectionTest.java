@@ -8,11 +8,11 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
 public class HttpConnectionTest {
@@ -27,51 +27,53 @@ public class HttpConnectionTest {
 
     @Test
     public void testContentLengthResponse() throws IOException {
+        try (HttpConnection connection = HttpConnectionFactory.newHttp("localhost", PORT)) {
+            testStdout(connection);
+            testStdout(connection);
+            testStdout(connection);
+        }
+    }
+
+    private void testStdout(HttpConnection connection) throws IOException {
         String content = "Hello World 我爱吃鱼";
-        StringReader reader = new StringReader(content);
         HttpRequestMessage request = new HttpRequestMessage();
         request.setHost("localhost");
         request.setRequestURI("/mock/stdout");
         request.addHeader("Content-Type", "text/plain; charset=UTF-8");
         request.setMethod("POST");
-        request.setContent(content.getBytes(StandardCharsets.UTF_8));
-
-        try (HttpConnection connection = HttpConnectionFactory.newHttp("localhost", PORT)) {
-            testStdout(request, connection, content);
-            testStdout(request, connection, content);
-            testStdout(request, connection, content);
-        }
-    }
-
-    private void testStdout(HttpRequestMessage request, HttpConnection connection, String expect) throws IOException {
+        request.setMessageBodyStream(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
         request.writeTo(connection.getOutputStream());
         HttpResponseMessage response = HttpResponseMessage.loadFromStream(connection.getInputStream());
 
-        Assert.assertEquals(expect, response.getMessageBody());
+        Assert.assertEquals(content, response.getMessageBody());
     }
 
     @Test
     public void testChunkedResponse() throws IOException {
-        HttpRequestMessage request = new HttpRequestMessage();
-        request.setHost("localhost");
-        request.setRequestURI("/mock/chunk");
         String dataHash = TestData.md5Hash(TestData.mediumHtmlData());
         try (HttpConnection connection = HttpConnectionFactory.newHttp("localhost", PORT)) {
-            testChunked(request, connection, dataHash);
-            testChunked(request, connection, dataHash);
-            testChunked(request, connection, dataHash);
+            testChunked(connection, dataHash);
+            testChunked(connection, dataHash);
+            testChunked(connection, dataHash);
         }
     }
 
     @Test
     public void testChunkedCloseResponse() throws IOException {
-        HttpRequestMessage request = new HttpRequestMessage();
-        request.setHost("localhost");
-        request.setRequestURI("/mock/chunk/conn/close");
         String dataHash = TestData.md5Hash(TestData.mediumHtmlData());
         try (HttpConnection connection = HttpConnectionFactory.newHttp("localhost", PORT)) {
-            testChunked(request, connection, dataHash);
+            HttpRequestMessage request = new HttpRequestMessage();
+            request.setHost("localhost");
+            request.setRequestURI("/mock/chunk/conn/close");
+            request.writeTo(connection.getOutputStream());
 
+            HttpResponseMessage response = HttpResponseMessage.loadFromStream(connection.getInputStream());
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                InputStream in = response.getMessageBodyStream();
+                IOUtils.readBytesTo(in, out);
+
+                Assert.assertEquals(dataHash, TestData.md5Hash(out.toByteArray()));
+            }
             Assert.assertTrue(connection.isClosed());
         }
     }
@@ -90,7 +92,10 @@ public class HttpConnectionTest {
         }
     }
 
-    private void testChunked(HttpRequestMessage request, HttpConnection connection, String expectHash) throws IOException {
+    private void testChunked(HttpConnection connection, String expectHash) throws IOException {
+        HttpRequestMessage request = new HttpRequestMessage();
+        request.setHost("localhost");
+        request.setRequestURI("/mock/chunk");
         request.writeTo(connection.getOutputStream());
         HttpResponseMessage response = HttpResponseMessage.loadFromStream(connection.getInputStream());
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {

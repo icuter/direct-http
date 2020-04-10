@@ -2,11 +2,14 @@ package cn.icuter.directhttp.transport;
 
 import cn.icuter.directhttp.mime.BodyPart;
 import cn.icuter.directhttp.mime.Multipart;
-import cn.icuter.directhttp.mime.Part;
 import cn.icuter.directhttp.utils.HeaderUtils;
+import cn.icuter.directhttp.utils.IOUtils;
 import cn.icuter.directhttp.utils.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpCookie;
 import java.nio.charset.Charset;
@@ -46,7 +49,7 @@ public class HttpRequestMessage {
     private List<HttpCookie> cookieList = new LinkedList<>();
     private String method = "GET";
     private Charset contentCharset = StandardCharsets.UTF_8;
-    private byte[] content = new byte[0];
+    private InputStream messageBodyStream;
     private String version = "HTTP/1.1";
     private String userAgent = "direct-http";
     /** Content-Type for multipart/form-data */
@@ -69,8 +72,8 @@ public class HttpRequestMessage {
         out.write(StringUtils.encodeAsISO(resultBuilder.toString()));
         if (multipart != null) {
             multipart.writeTo(out);
-        } else if (content.length > 0) {
-            out.write(content);
+        } else if (messageBodyStream != null && messageBodyStream.available() > 0) {
+            IOUtils.readBytesTo(messageBodyStream, out);
         }
     }
 
@@ -114,13 +117,20 @@ public class HttpRequestMessage {
     }
 
     private void buildRequestContentLength(StringBuilder resultBuilder) {
+        int streamLength;
+        try {
+            streamLength = messageBodyStream != null ? messageBodyStream.available() : 0;
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
         if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) {
-            if (content.length > 0) {
+            if (streamLength > 0) {
                 throw new IllegalArgumentException("Method of GET / HEAD should NOT request message body!");
             }
             return;
         }
-        long contentLength = multipart != null ? multipart.length() : content.length;
+        // TODO if messageBodyStream is ChunkedOutputStream, then content-length should NOT be requested
+        long contentLength = multipart != null ? multipart.length() : streamLength;
         addNewLine(resultBuilder.append("content-length").append(HEADER_KV_SEPARATOR).append(contentLength));
     }
 
@@ -156,23 +166,26 @@ public class HttpRequestMessage {
     private void buildRequestContent(StringBuilder builder) {
         if (multipart != null) {
             builder.append("... Multipart Message Body ...");
-            return;
+        } else {
+            if (messageBodyStream instanceof ByteArrayInputStream) {
+                String value = (String) headers.getOrDefault("content-type", "");
+                String charset = HeaderUtils.findHeaderParamValue(value, "charset", contentCharset.name());
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                try {
+                    IOUtils.readBytesTo(messageBodyStream, out);
+                } catch (IOException e) {
+                    // ignore
+                }
+                builder.append(StringUtils.decodeAs(out.toByteArray(), Charset.forName(charset)));
+                ((ByteArrayInputStream) messageBodyStream).reset();
+            } else if (messageBodyStream != null) {
+                builder.append("... Message Body ...");
+            }
         }
-        String value = (String) headers.getOrDefault("content-type", "");
-        String charset = HeaderUtils.findHeaderParamValue(value, "charset", contentCharset.name());
-        builder.append(StringUtils.decodeAs(content, Charset.forName(charset)));
     }
 
     public void setRequestURI(String requestURI) {
         this.requestURI = requestURI;
-    }
-
-    public void setContentCharset(String charsetName) {
-        this.contentCharset = Charset.forName(charsetName);
-    }
-
-    public void setContentCharset(Charset charset) {
-        this.contentCharset = charset;
     }
 
     public void setVersion(String version) {
@@ -251,12 +264,8 @@ public class HttpRequestMessage {
         this.method = method;
     }
 
-    public byte[] getContent() {
-        return content;
-    }
-
-    public void setContent(byte[] content) {
-        Objects.requireNonNull(content);
-        this.content = content;
+    public void setMessageBodyStream(InputStream messageBodyStream) {
+        Objects.requireNonNull(messageBodyStream);
+        this.messageBodyStream = messageBodyStream;
     }
 }

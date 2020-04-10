@@ -55,12 +55,15 @@ public class PartTest {
 
     @Test
     public void testMultipart() throws Exception {
+        BodyPart text2 = new TextPart(SRC);
+        text2.header().put("Content-Type", "text/x-plain; charset=UTF-8");
+        text2.header().put("Content-Encoding", "identity");
+        MultiBodyPart subMulti = new MultiBodyPart();
+        subMulti.addBodyPart(text2);
+        subMulti.addBodyPart(text2);
+
         BodyPart text = new TextPart(SRC);
         text.header().put("Content-Type", "text/plain; charset=UTF-8");
-        MultiBodyPart subMulti = new MultiBodyPart();
-        subMulti.addBodyPart(text);
-        subMulti.addBodyPart(text);
-
         Multipart multipart = new Multipart()
                 .addBodyPart(text)
                 .addBodyPart(text)
@@ -81,11 +84,13 @@ public class PartTest {
                 + "Content-Type: " + subMulti.toContentType() + "\r\n"
                 + "\r\n"
                 + "--" + subMulti.getBoundary() + "\r\n"
-                + "Content-Type: text/plain; charset=UTF-8" + "\r\n"
+                + "Content-Type: text/x-plain; charset=UTF-8" + "\r\n"
+                + "Content-Encoding: identity" + "\r\n"
                 + "\r\n"
                 + SRC + "\r\n"
                 + "--" + subMulti.getBoundary() + "\r\n"
-                + "Content-Type: text/plain; charset=UTF-8" + "\r\n"
+                + "Content-Type: text/x-plain; charset=UTF-8" + "\r\n"
+                + "Content-Encoding: identity" + "\r\n"
                 + "\r\n"
                 + SRC + "\r\n"
                 + "--" + subMulti.getBoundary() + "--\r\n"

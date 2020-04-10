@@ -67,7 +67,9 @@ public class HttpRequestMessage {
 
         // write request line and headers
         out.write(StringUtils.encodeAsISO(resultBuilder.toString()));
-        if (content.length > 0) {
+        if (multipart != null) {
+            multipart.writeTo(out);
+        } else if (content.length > 0) {
             out.write(content);
         }
     }
@@ -114,7 +116,7 @@ public class HttpRequestMessage {
     private void buildRequestContentLength(StringBuilder resultBuilder) {
         if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) {
             if (content.length > 0) {
-                content = new byte[0];
+                throw new IllegalArgumentException("Method of GET / HEAD should NOT request message body!");
             }
             return;
         }
@@ -152,6 +154,10 @@ public class HttpRequestMessage {
     }
 
     private void buildRequestContent(StringBuilder builder) {
+        if (multipart != null) {
+            builder.append("... Multipart Message Body ...");
+            return;
+        }
         String value = (String) headers.getOrDefault("content-type", "");
         String charset = HeaderUtils.findHeaderParamValue(value, "charset", contentCharset.name());
         builder.append(StringUtils.decodeAs(content, Charset.forName(charset)));
@@ -185,7 +191,9 @@ public class HttpRequestMessage {
     }
 
     public void setMultipart(Multipart multipart) {
+        Objects.requireNonNull(multipart, "Multipart must NOT be null!");
         this.multipart = multipart;
+        addHeader("Content-Type", multipart.toContentType());
     }
 
     public void addBodyPart(BodyPart part) {

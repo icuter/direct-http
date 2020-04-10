@@ -1,5 +1,6 @@
 package cn.icuter.directhttp.mime;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Map;
@@ -16,6 +17,9 @@ import java.util.Map;
  *               close-delimiter transport-padding
  *               [CRLF epilogue]
  * </pre>
+ *
+ * Multipart does not have MIME-part-headers that is a http message body.
+ *
  * @author edward
  * @since 2020-04-06
  */
@@ -56,7 +60,7 @@ public class Multipart implements Part {
     }
 
     @Override
-    public void writeTo(OutputStream out) throws Exception {
+    public void writeTo(OutputStream out) throws IOException {
         multiBodyPart.writeBodyTo(out);
         out.write(CRLF);
     }

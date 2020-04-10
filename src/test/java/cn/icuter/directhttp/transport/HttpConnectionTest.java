@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
@@ -27,6 +28,7 @@ public class HttpConnectionTest {
     @Test
     public void testContentLengthResponse() throws IOException {
         String content = "Hello World 我爱吃鱼";
+        StringReader reader = new StringReader(content);
         HttpRequestMessage request = new HttpRequestMessage();
         request.setHost("localhost");
         request.setRequestURI("/mock/stdout");

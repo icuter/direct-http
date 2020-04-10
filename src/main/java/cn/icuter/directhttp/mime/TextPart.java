@@ -3,6 +3,7 @@ package cn.icuter.directhttp.mime;
 import cn.icuter.directhttp.utils.HeaderUtils;
 import cn.icuter.directhttp.utils.StringUtils;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +16,7 @@ public class TextPart extends BodyPart {
     }
 
     @Override
-    public void writeBodyTo(OutputStream out) throws Exception {
+    public void writeBodyTo(OutputStream out) throws IOException {
         out.write(StringUtils.encodeAs(text, Charset.forName(getCharset())));
     }
 

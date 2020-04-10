@@ -9,17 +9,10 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * "multipart/mixed" refer to the spec of <a href="https://tools.ietf.org/html/rfc2046#section-5.1.1">rfc2046#section-5.1.1</a>
+ * MultiBodyPart is different to Multipart, MultiBodyPart is one of body-part that designed by <a href="https://tools.ietf.org/html/rfc2046#section-5.1.1">rfc2046#section-5.1.1</a>
+ * and contains MIME-part-headers.
  * <p />
- * "multipart/form-data" refer to the spec of <a href="https://tools.ietf.org/html/rfc1867">rfc1867</a>
  *
- * <pre>
- * multipart-body := [preamble CRLF]
- *               dash-boundary transport-padding CRLF
- *               body-part *encapsulation
- *               close-delimiter transport-padding
- *               [CRLF epilogue]
- * </pre>
  * @author edward
  * @since 2020-04-09
  */
@@ -70,7 +63,7 @@ public class MultiBodyPart extends BodyPart {
     }
 
     @Override
-    public void writeBodyTo(OutputStream out) throws Exception {
+    public void writeBodyTo(OutputStream out) throws IOException {
         for (BodyPart part : bodyParts) {
             writeBodyBoundaryLine(out);
             part.writeTo(out);

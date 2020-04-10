@@ -20,7 +20,7 @@ public class StreamPart extends BodyPart {
     }
 
     @Override
-    public void writeBodyTo(OutputStream out) throws Exception {
+    public void writeBodyTo(OutputStream out) throws IOException {
         IOUtils.readBytesTo(in, out);
     }
 

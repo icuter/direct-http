@@ -2,8 +2,9 @@ package cn.icuter.directhttp.mime;
 
 import cn.icuter.directhttp.utils.StringUtils;
 
+import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -25,7 +26,7 @@ import java.util.Map;
  * @since 2020-04-07
  */
 public abstract class BodyPart implements Part {
-    private Map<String, String> mimePartHeaders = new HashMap<>();
+    private Map<String, String> mimePartHeaders = new LinkedHashMap<>();
 
     @Override
     public boolean isMultipart() {
@@ -38,7 +39,7 @@ public abstract class BodyPart implements Part {
     }
 
     @Override
-    public void writeTo(OutputStream out) throws Exception {
+    public void writeTo(OutputStream out) throws IOException {
         writeHeaderTo(out);
         writeBodyTo(out);
     }
@@ -48,7 +49,7 @@ public abstract class BodyPart implements Part {
         return headerLength() + bodyLength();
     }
 
-    protected void writeHeaderTo(OutputStream out) throws Exception {
+    protected void writeHeaderTo(OutputStream out) throws IOException {
         for (Map.Entry<String, String> entry : mimePartHeaders.entrySet()) {
             String header = entry.getKey() + ": " + entry.getValue();
             out.write(StringUtils.encodeAsISO(header));
@@ -56,7 +57,7 @@ public abstract class BodyPart implements Part {
         }
         out.write(CRLF);
     }
-    public abstract void writeBodyTo(OutputStream out) throws Exception;
+    public abstract void writeBodyTo(OutputStream out) throws IOException;
 
     protected long headerLength() {
         long headerLen = 0;

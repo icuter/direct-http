@@ -1,5 +1,6 @@
 package cn.icuter.directhttp.mime;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
@@ -14,5 +15,5 @@ public interface Part {
     boolean isMultipart();
     long length();
     Map<String, String> header();
-    void writeTo(OutputStream out) throws Exception;
+    void writeTo(OutputStream out) throws IOException;
 }

@@ -5,6 +5,7 @@ import cn.icuter.directhttp.utils.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -16,7 +17,7 @@ public class FilePart extends BodyPart {
     }
 
     @Override
-    public void writeBodyTo(OutputStream out) throws Exception {
+    public void writeBodyTo(OutputStream out) throws IOException {
         try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
             IOUtils.readBytesTo(in, out);
         }

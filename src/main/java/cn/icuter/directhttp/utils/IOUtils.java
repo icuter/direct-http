@@ -21,6 +21,12 @@ public abstract class IOUtils {
         }
     }
 
+    public static byte[] readAllBytes(InputStream src) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        readBytesTo(src, out, 16384); // 16KB
+        return out.toByteArray();
+    }
+
     public static void readBytesTo(InputStream src, OutputStream target) throws IOException {
         readBytesTo(src, target, 16384); // 16KB
     }

@@ -3,7 +3,6 @@ package cn.icuter.directhttp.transport;
 import cn.icuter.directhttp.mime.Multipart;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -11,18 +10,19 @@ import java.io.OutputStream;
  * @since 2020-04-12
  */
 public class MultipartMessageBody implements MessageBody {
-    Multipart multipart;
+    private Multipart multipart;
 
     public MultipartMessageBody(Multipart multipart) {
         this.multipart = multipart;
     }
 
     @Override
-    public void readFrom(InputStream in) throws IOException {
+    public void writeTo(OutputStream out) throws IOException {
+        multipart.writeTo(out);
     }
 
     @Override
-    public void writeTo(OutputStream out) throws IOException {
-        multipart.writeTo(out);
+    public long contentLength() {
+        return multipart.length();
     }
 }

@@ -1,9 +1,6 @@
 package cn.icuter.directhttp.transport;
 
-import cn.icuter.directhttp.utils.IOUtils;
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -11,19 +8,28 @@ import java.io.OutputStream;
  * @since 2020-04-12
  */
 public class BinaryMessageBody implements MessageBody {
-    byte[] bytes;
+    private byte[] bytes;
+    private long length;
 
     public BinaryMessageBody(byte[] bytes) {
-        this.bytes = bytes;
+        this(bytes, bytes.length);
     }
 
-    @Override
-    public void readFrom(InputStream in) throws IOException {
-        bytes = IOUtils.readAllBytes(in);
+    public BinaryMessageBody(byte[] bytes, long length) {
+        this.bytes = bytes;
+        if (length < 0) {
+            throw new IllegalArgumentException("the length (" + length + ") must be positive");
+        }
+        this.length = length;
     }
 
     @Override
     public void writeTo(OutputStream out) throws IOException {
-        out.write(bytes);
+        out.write(bytes, 0, (int) length);
+    }
+
+    @Override
+    public long contentLength() {
+        return length;
     }
 }

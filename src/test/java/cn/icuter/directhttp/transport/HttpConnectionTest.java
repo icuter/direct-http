@@ -39,12 +39,12 @@ public class HttpConnectionTest {
         HttpRequestMessage request = new HttpRequestMessage();
         request.setHost("localhost");
         request.setRequestURI("/mock/stdout");
-        request.addHeader("Content-Type", "text/plain; charset=UTF-8");
         request.setMethod("POST");
-        request.setMessageBodyStream(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+        request.setMessageBody(MessageBodyFactory.text(content));
         request.writeTo(connection.getOutputStream());
         HttpResponseMessage response = HttpResponseMessage.loadFromStream(connection.getInputStream());
 
+        Assert.assertFalse(response.getHeaders().isEmpty());
         Assert.assertEquals(content, response.getMessageBody());
     }
 

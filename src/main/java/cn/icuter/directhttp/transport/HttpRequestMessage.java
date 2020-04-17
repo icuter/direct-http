@@ -1,15 +1,10 @@
 package cn.icuter.directhttp.transport;
 
-import cn.icuter.directhttp.mime.BodyPart;
-import cn.icuter.directhttp.mime.Multipart;
 import cn.icuter.directhttp.utils.HeaderUtils;
-import cn.icuter.directhttp.utils.IOUtils;
 import cn.icuter.directhttp.utils.StringUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpCookie;
 import java.nio.charset.Charset;
@@ -18,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Http spec https://www.w3.org/Protocols/HTTP/1.1/rfc2616.pdf
@@ -36,8 +30,9 @@ public class HttpRequestMessage {
     private static final String SP = " ";
     private static final String CRLF = "\r\n";
     private static final String HEADER_KV_SEPARATOR = ":" + SP;
-    private String host;
+    private String method = "GET";
     private String requestURI;
+    private String version = "HTTP/1.1";
     private Map<String, Object> headers = new LinkedHashMap<>();
 
     /**
@@ -47,13 +42,10 @@ public class HttpRequestMessage {
      * @see "https://www.ietf.org/rfc/rfc2965.txt"
      */
     private List<HttpCookie> cookieList = new LinkedList<>();
-    private String method = "GET";
     private Charset contentCharset = StandardCharsets.UTF_8;
-    private InputStream messageBodyStream;
-    private String version = "HTTP/1.1";
+    private MessageBody messageBody = MessageBodyFactory.empty();
+    private String host;
     private String userAgent = "direct-http";
-    /** Content-Type for multipart/form-data */
-    private Multipart multipart;
 
     public HttpRequestMessage() {
     }
@@ -68,16 +60,14 @@ public class HttpRequestMessage {
         buildHeaders(resultBuilder);
         addNewLine(resultBuilder);
 
-        // write request line and headers
+        // sends request line and headers
         out.write(StringUtils.encodeAsISO(resultBuilder.toString()));
-        if (multipart != null) {
-            multipart.writeTo(out);
-        } else if (messageBodyStream != null && messageBodyStream.available() > 0) {
-            IOUtils.readBytesTo(messageBodyStream, out);
-        }
+        // sends message body
+        messageBody.writeTo(out);
     }
 
-    public String format() {
+    /* Package-private for test cases */
+    String format() {
         StringBuilder resultBuilder = new StringBuilder();
         // request start line
         buildRequestLine(resultBuilder);
@@ -117,21 +107,14 @@ public class HttpRequestMessage {
     }
 
     private void buildRequestContentLength(StringBuilder resultBuilder) {
-        int streamLength;
-        try {
-            streamLength = messageBodyStream != null ? messageBodyStream.available() : 0;
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
         if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) {
-            if (streamLength > 0) {
+            if (messageBody.contentLength() > 0) {
                 throw new IllegalArgumentException("Method of GET / HEAD should NOT request message body!");
             }
             return;
         }
         // TODO if messageBodyStream is ChunkedOutputStream, then content-length should NOT be requested
-        long contentLength = multipart != null ? multipart.length() : streamLength;
-        addNewLine(resultBuilder.append("content-length").append(HEADER_KV_SEPARATOR).append(contentLength));
+        addNewLine(resultBuilder.append("content-length").append(HEADER_KV_SEPARATOR).append(messageBody.contentLength()));
     }
 
     private void buildRequestHeaders(StringBuilder builder) {
@@ -164,23 +147,16 @@ public class HttpRequestMessage {
     }
 
     private void buildRequestContent(StringBuilder builder) {
-        if (multipart != null) {
-            builder.append("... Multipart Message Body ...");
-        } else {
-            if (messageBodyStream instanceof ByteArrayInputStream) {
-                String value = (String) headers.getOrDefault("content-type", "");
-                String charset = HeaderUtils.findHeaderParamValue(value, "charset", contentCharset.name());
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                try {
-                    IOUtils.readBytesTo(messageBodyStream, out);
-                } catch (IOException e) {
-                    // ignore
-                }
-                builder.append(StringUtils.decodeAs(out.toByteArray(), Charset.forName(charset)));
-                ((ByteArrayInputStream) messageBodyStream).reset();
-            } else if (messageBodyStream != null) {
-                builder.append("... Message Body ...");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        if (messageBody.contentLength() > 0) {
+            try {
+                messageBody.writeTo(out);
+            } catch (IOException e) {
+                // ignore
             }
+            String value = (String) headers.getOrDefault("content-type", "");
+            String charset = HeaderUtils.findHeaderParamValue(value, "charset", contentCharset.name());
+            builder.append(StringUtils.decodeAs(out.toByteArray(), Charset.forName(charset)));
         }
     }
 
@@ -201,23 +177,6 @@ public class HttpRequestMessage {
             throw new IllegalArgumentException("Header name must not be null or empty!");
         }
         headers.put(key, val);
-    }
-
-    public void setMultipart(Multipart multipart) {
-        Objects.requireNonNull(multipart, "Multipart must NOT be null!");
-        this.multipart = multipart;
-        addHeader("Content-Type", multipart.toContentType());
-    }
-
-    public void addBodyPart(BodyPart part) {
-        if (this.multipart == null) {
-            this.multipart = new Multipart("form-data");
-        }
-        this.multipart.addBodyPart(part);
-    }
-
-    public Multipart getMultipart() {
-        return multipart;
     }
 
     @Override
@@ -264,8 +223,7 @@ public class HttpRequestMessage {
         this.method = method;
     }
 
-    public void setMessageBodyStream(InputStream messageBodyStream) {
-        Objects.requireNonNull(messageBodyStream);
-        this.messageBodyStream = messageBodyStream;
+    public void setMessageBody(MessageBody messageBody) {
+        this.messageBody = messageBody;
     }
 }

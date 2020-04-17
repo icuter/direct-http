@@ -50,4 +50,12 @@ public abstract class IOUtils {
             read = in.read(buffer);
         } while (read > 0 && (n -= read) > 0);
     }
+
+    public static int avaiable(InputStream in) {
+        try {
+            return in.available();
+        } catch (IOException e) {
+            throw new IllegalStateException("invalid InputStream");
+        }
+    }
 }

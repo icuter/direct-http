@@ -89,11 +89,10 @@ public class HttpResponseMessage {
         }
         if (response.headers.containsKey("content-encoding")) {
             String contentEnc = (String) response.headers.get("content-encoding");
-            InputStream bodyStream = response.messageBodyStream;
             if ("gzip".equalsIgnoreCase(contentEnc)) {
-                response.messageBodyStream = new GZIPInputStream(bodyStream);
+                response.messageBodyStream = new GZIPInputStream(response.messageBodyStream);
             } else if ("deflate".equalsIgnoreCase(contentEnc)) {
-                response.messageBodyStream = new InflaterInputStream(bodyStream);
+                response.messageBodyStream = new InflaterInputStream(response.messageBodyStream);
             } else {
                 throw new UnsupportedEncodingException("Unacceptable Content-Encoding \"" + contentEnc + "\"");
             }

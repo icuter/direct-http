@@ -12,18 +12,19 @@ import java.util.Objects;
  * @since 2020-04-12
  */
 public class InputStreamMessageBody implements MessageBody {
-    InputStream in;
-
-    public InputStreamMessageBody() {
-    }
+    private InputStream in;
+    private long size;
 
     public InputStreamMessageBody(InputStream in) {
-        this.in = in;
+        this(in, IOUtils.avaiable(in));
     }
 
-    @Override
-    public void readFrom(InputStream in) throws IOException {
+    public InputStreamMessageBody(InputStream in, int size) {
         this.in = in;
+        if (size <= 0) {
+            throw new IllegalArgumentException("the size (" + size + ") must be positive");
+        }
+        this.size = size;
     }
 
     @Override
@@ -31,5 +32,10 @@ public class InputStreamMessageBody implements MessageBody {
         Objects.requireNonNull(in, "Input stream must NOT be null");
 
         IOUtils.readBytesTo(in, out);
+    }
+
+    @Override
+    public long contentLength() {
+        return size;
     }
 }

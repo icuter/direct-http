@@ -10,7 +10,7 @@ import java.io.InputStream;
 public class ContentLengthInputStream extends FilterInputStream {
 
     private int remainingContentLength;
-    boolean closed;
+    private boolean closed;
     private boolean closeReadAll;
 
     private ContentLengthInputStream(InputStream in, int contentLength) {
@@ -61,6 +61,7 @@ public class ContentLengthInputStream extends FilterInputStream {
             }
             return -1;
         }
+        len = Math.min(remainingContentLength, len);
         int n = super.read(b, off, len);
         if (n > 0) {
             remainingContentLength -= n;
@@ -71,6 +72,11 @@ public class ContentLengthInputStream extends FilterInputStream {
     @Override
     public void close() throws IOException {
         closed = true;
+    }
+
+    @Override
+    public int available() throws IOException {
+        return Math.max(remainingContentLength, 0);
     }
 
     public void setCloseReadAll() {

@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-public class PartTest {
+public class BodyPartTest {
 
     private static final String SRC = "abc 123 我爱吃鱼 \r\n";
 

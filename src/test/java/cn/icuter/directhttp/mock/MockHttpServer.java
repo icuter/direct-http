@@ -1,16 +1,22 @@
 package cn.icuter.directhttp.mock;
 
 import cn.icuter.directhttp.data.TestData;
+import cn.icuter.directhttp.transport.HttpConnectionTest;
 import cn.icuter.directhttp.utils.IOUtils;
+import cn.icuter.directhttp.utils.StringUtils;
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 public class MockHttpServer extends HttpServer implements Closeable {
@@ -24,15 +30,15 @@ public class MockHttpServer extends HttpServer implements Closeable {
     private void registerContexts() {
         server.createContext("/mock/stdout", exchange -> {
             try {
-                InputStream in = exchange.getRequestBody();
-                int contentLen = in.available();
+                int contentLen = Integer.parseInt(exchange.getRequestHeaders().getFirst("Content-Length"));
 
                 exchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
                 exchange.getResponseHeaders().add("Connection", "keep-alive");
-
                 exchange.sendResponseHeaders(200, contentLen);
+
+                Headers headers = exchange.getRequestHeaders();
                 try (OutputStream out = exchange.getResponseBody()) {
-                    IOUtils.readBytesTo(in, out, contentLen);
+                    IOUtils.readBytesTo(exchange.getRequestBody(), out, contentLen);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -41,13 +47,28 @@ public class MockHttpServer extends HttpServer implements Closeable {
         });
         server.createContext("/mock/chunk", exchange -> {
             try {
-
                 exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
                 exchange.getResponseHeaders().add("Connection", "keep-alive");
 
                 exchange.sendResponseHeaders(200, 0);
                 try (OutputStream out = exchange.getResponseBody()) {
                     out.write(TestData.mediumHtmlData());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        });
+
+        server.createContext("/mock/chunk/stdout", exchange -> {
+            try {
+                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                exchange.getResponseHeaders().add("Connection", "keep-alive");
+                exchange.sendResponseHeaders(200, 0);
+
+                // ChunkedInputStream
+                try (OutputStream out = exchange.getResponseBody()) {
+                    IOUtils.readBytesTo(exchange.getRequestBody(), out);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -147,4 +168,8 @@ public class MockHttpServer extends HttpServer implements Closeable {
     public void close() {
         stop(0);
     }
+
+    /*public static void main(String[] args) throws IOException {
+        newLocalHttpServer(HttpConnectionTest.PORT).start();
+    }*/
 }

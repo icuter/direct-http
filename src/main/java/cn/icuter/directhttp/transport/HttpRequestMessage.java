@@ -226,4 +226,7 @@ public class HttpRequestMessage {
     public void setMessageBody(MessageBody messageBody) {
         this.messageBody = messageBody;
     }
+    long getContentLength() {
+        return messageBody.contentLength();
+    }
 }

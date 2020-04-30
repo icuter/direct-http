@@ -119,6 +119,7 @@ public class ChunkedInputStream extends FilterInputStream {
             return -1;
         }
         if (!prepareChunkDataReading()) {
+            eos = true;
             return -1;
         }
 
@@ -127,6 +128,9 @@ public class ChunkedInputStream extends FilterInputStream {
             remainingChunkDataSize -= read;
         } else {
             eos = true;
+            // TODO if remainingChunkDataSize > 0 should throw IOException
+            remainingChunkDataSize = 0;
+            state = ReadingState.DONE;
         }
         return read;
     }

@@ -36,4 +36,8 @@ public class MessageBodyFactory {
     public static MessageBody stream(InputStream in) {
         return new InputStreamMessageBody(in);
     }
+
+    public static MessageBody stream(InputStream in, int size) {
+        return new InputStreamMessageBody(in, size);
+    }
 }

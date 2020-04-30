@@ -8,16 +8,13 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 
 public class HttpConnectionTest {
     private static MockHttpServer server;
-    private static final int PORT = 9999;
+    public static final int PORT = 9999;
 
     @BeforeClass
     public static void startUpServer() throws IOException {

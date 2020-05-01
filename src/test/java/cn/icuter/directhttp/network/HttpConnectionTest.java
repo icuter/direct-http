@@ -2,10 +2,8 @@ package cn.icuter.directhttp.network;
 
 import cn.icuter.directhttp.data.TestData;
 import cn.icuter.directhttp.mock.MockHttpServer;
-import cn.icuter.directhttp.network.HttpConnection;
-import cn.icuter.directhttp.network.HttpConnectionFactory;
 import cn.icuter.directhttp.request.HttpRequestMessage;
-import cn.icuter.directhttp.request.MessageBodyFactory;
+import cn.icuter.directhttp.data.MessageBodyFactory;
 import cn.icuter.directhttp.response.HttpResponseMessage;
 import cn.icuter.directhttp.utils.IOUtils;
 import org.junit.AfterClass;

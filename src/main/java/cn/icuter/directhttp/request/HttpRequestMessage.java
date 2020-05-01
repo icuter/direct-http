@@ -1,5 +1,7 @@
 package cn.icuter.directhttp.request;
 
+import cn.icuter.directhttp.data.MessageBody;
+import cn.icuter.directhttp.data.MessageBodyFactory;
 import cn.icuter.directhttp.utils.HeaderUtils;
 import cn.icuter.directhttp.utils.StringUtils;
 

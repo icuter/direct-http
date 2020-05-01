@@ -1,4 +1,4 @@
-package cn.icuter.directhttp.request;
+package cn.icuter.directhttp.data;
 
 import java.io.FilterInputStream;
 import java.io.IOException;

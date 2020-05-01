@@ -1,4 +1,4 @@
-package cn.icuter.directhttp.request;
+package cn.icuter.directhttp.data;
 
 import cn.icuter.directhttp.utils.IOUtils;
 

@@ -1,6 +1,6 @@
 package cn.icuter.directhttp.request;
 
-import cn.icuter.directhttp.request.SizedInputStream;
+import cn.icuter.directhttp.data.SizedInputStream;
 import cn.icuter.directhttp.utils.IOUtils;
 import cn.icuter.directhttp.utils.StringUtils;
 import org.junit.Assert;

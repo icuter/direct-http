@@ -1,22 +1,16 @@
 package cn.icuter.directhttp.mock;
 
 import cn.icuter.directhttp.data.TestData;
-import cn.icuter.directhttp.transport.HttpConnectionTest;
 import cn.icuter.directhttp.utils.IOUtils;
-import cn.icuter.directhttp.utils.StringUtils;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 
 public class MockHttpServer extends HttpServer implements Closeable {

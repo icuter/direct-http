@@ -1,4 +1,4 @@
-package cn.icuter.directhttp.transport;
+package cn.icuter.directhttp.network;
 
 import java.io.IOException;
 

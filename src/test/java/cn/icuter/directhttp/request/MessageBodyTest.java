@@ -1,7 +1,9 @@
-package cn.icuter.directhttp.transport;
+package cn.icuter.directhttp.request;
 
 import cn.icuter.directhttp.mime.Multipart;
 import cn.icuter.directhttp.mime.TextPart;
+import cn.icuter.directhttp.request.MessageBody;
+import cn.icuter.directhttp.request.MessageBodyFactory;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,6 +1,7 @@
-package cn.icuter.directhttp.transport;
+package cn.icuter.directhttp.response;
 
 import cn.icuter.directhttp.data.TestData;
+import cn.icuter.directhttp.response.HttpResponseMessage;
 import cn.icuter.directhttp.utils.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;

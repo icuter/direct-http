@@ -94,18 +94,25 @@ DirectHttp.globalPooledConfig().max(int).min(int).idle(TimeUnit).lifetime(TimeUn
 
 ```java
 PooledRequest pooled = DirectHttp.newPooledRequest("host");
-try (Request request = pooled.getRequest()) {
-    Future<Response> future1 = request.body("JSON/XML/FORM-FIELDS/ANY-OTHERS").asyncPost("relative-path", new Callback<Response>() {
-        @Override
-        public void process(Response resp) {
-            // ... resp
+pooled.getRequest().asyncPost("http://IP/mysite/users/@{id}", req -> {
+        req.addPathParam("id", "0123456789");
+        req.addQueryParam("version", "1.0");
+        req.addFormParam("type", "file");
+        
+        req.addHeader("Authentication", "...");
+        req.addHeader("X-Date", "2021-05-09");
+        req.addHeader("X-Repeat", Arrays.asList("1", "2", "3", "4"));
+        
+        req.setBody("JSON/XML/FORM-FIELDS/ANY-OTHERS");
+    }).fail(err -> {
+        
+    }).success(resp -> {
+        
+    }).done((resp, err) -> {
+        if (err != null) {
+            // process error
+            return;
         }
+        // process resp
     });
-    // ... future1 ...
-
-    Future<Response> future2 = request.formField("name", "value").asyncSend("post", "relative-path", resp -> {
-        // ... resp
-    });
-    // ... future2 ...
-}
 ```
